@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Verify Fix for April 30, 2025</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <h1>Verify Fix for April 30, 2025</h1>
+
+    <div id="game-container">
+        <canvas id="gameCanvas" width="500" height="500"></canvas>
+
+        <div class="controls">
+            <button id="newGameBtn">New Game</button>
+            <button id="resetBtn">Reset</button>
+            <input type="date" id="dateInput" value="2025-04-30">
+            <button id="loadDateBtn">Load Date</button>
+        </div>
+
+        <div class="info">
+            <p id="dateDisplay"></p>
+            <p id="scoreDisplay">Moves: 0</p>
+            <p id="minMovesDisplay">Minimum Moves: 0</p>
+            <p id="solvableStatus"></p>
+        </div>
+    </div>
+
+    <div id="results" style="margin-top: 20px; padding: 10px; border: 1px solid #ccc; background-color: #f9f9f9;">
+        <h3>Test Results</h3>
+        <div id="resultsContent"></div>
+    </div>
+
+    <script src="constants.js"></script>
+    <script src="utils.js"></script>
+    <script src="seededRandom.js"></script>
+    <script src="mapCreator.js"></script>
+    <script src="player.js"></script>
+    <script src="animation.js"></script>
+    <script src="renderer.js"></script>
+    <script src="inputHandler.js"></script>
+    <script src="gameManager.js"></script>
+    <script>
+        // Initialize the game when the page loads
+        window.onload = function() {
+            const game = new GameManager();
+            const resultsContent = document.getElementById('resultsContent');
+            
+            // Set the date to April 30, 2025
+            game.generateMapFromDate("2025-04-30");
+            
+            // Start the game loop
+            game.startGameLoop();
+            
+            // Add debug logging
+            console.log("Game initialized with date: 2025-04-30");
+            console.log("Seed:", game.currentSeed);
+            console.log("Player position:", game.player.initialPos);
+            console.log("Target position:", game.grid.targetPos);
+            console.log("Minimum moves:", document.getElementById('minMovesDisplay').textContent);
+            
+            resultsContent.innerHTML += `<p>Game initialized with date: 2025-04-30</p>`;
+            resultsContent.innerHTML += `<p>Seed: ${game.currentSeed}</p>`;
+            resultsContent.innerHTML += `<p>Player position: (${game.player.initialPos.x}, ${game.player.initialPos.y})</p>`;
+            resultsContent.innerHTML += `<p>Target position: (${game.grid.targetPos.x}, ${game.grid.targetPos.y})</p>`;
+            resultsContent.innerHTML += `<p>Minimum moves: ${document.getElementById('minMovesDisplay').textContent}</p>`;
+            
+            // Add a button to verify the fix
+            const verifyFixBtn = document.createElement('button');
+            verifyFixBtn.textContent = 'Verify Fix';
+            verifyFixBtn.style.marginTop = '20px';
+            document.body.appendChild(verifyFixBtn);
+            
+            verifyFixBtn.addEventListener('click', function() {
+                console.log("Verifying fix...");
+                resultsContent.innerHTML += `<h4>Verification Results</h4>`;
+                
+                // Reset the player
+                game.resetPlayer();
+                
+                // Get the BFS result
+                const bfsResult = game.grid.checkSolvable(game.player.initialPos, true);
+                console.log("BFS result:", bfsResult);
+                resultsContent.innerHTML += `<p>BFS result: ${JSON.stringify(bfsResult)}</p>`;
+                
+                // Try to solve the puzzle with the minimum number of moves
+                let solved = false;
+                const directions = ['UP', 'RIGHT', 'DOWN', 'LEFT'];
+                
+                // Try all possible combinations of moves up to 3 moves
+                // Try one move
+                for (let i = 0; i < 4; i++) {
+                    // Reset the player
+                    game.resetPlayer();
+                    
+                    // Make the move
+                    game.movePlayer(i);
+                    
+                    // Check if the puzzle is solved
+                    if (Utils.arePositionsEqual(game.player.pos, game.grid.targetPos)) {
+                        console.log(`Puzzle solved in 1 move: ${directions[i]}`);
+                        resultsContent.innerHTML += `<p><strong>Puzzle solved in 1 move: ${directions[i]}</strong></p>`;
+                        solved = true;
+                        break;
+                    }
+                }
+                
+                if (!solved) {
+                    // Try two moves
+                    for (let i = 0; i < 4; i++) {
+                        for (let j = 0; j < 4; j++) {
+                            // Reset the player
+                            game.resetPlayer();
+                            
+                            // Make the first move
+                            game.movePlayer(i);
+                            
+                            // Make the second move
+                            game.movePlayer(j);
+                            
+                            // Check if the puzzle is solved
+                            if (Utils.arePositionsEqual(game.player.pos, game.grid.targetPos)) {
+                                console.log(`Puzzle solved in 2 moves: ${directions[i]} then ${directions[j]}`);
+                                resultsContent.innerHTML += `<p><strong>Puzzle solved in 2 moves: ${directions[i]} then ${directions[j]}</strong></p>`;
+                                solved = true;
+                                break;
+                            }
+                        }
+                        if (solved) break;
+                    }
+                }
+                
+                if (!solved) {
+                    // Try three moves
+                    for (let i = 0; i < 4; i++) {
+                        for (let j = 0; j < 4; j++) {
+                            for (let k = 0; k < 4; k++) {
+                                // Reset the player
+                                game.resetPlayer();
+                                
+                                // Make the first move
+                                game.movePlayer(i);
+                                
+                                // Make the second move
+                                game.movePlayer(j);
+                                
+                                // Make the third move
+                                game.movePlayer(k);
+                                
+                                // Check if the puzzle is solved
+                                if (Utils.arePositionsEqual(game.player.pos, game.grid.targetPos)) {
+                                    console.log(`Puzzle solved in 3 moves: ${directions[i]} then ${directions[j]} then ${directions[k]}`);
+                                    resultsContent.innerHTML += `<p><strong>Puzzle solved in 3 moves: ${directions[i]} then ${directions[j]} then ${directions[k]}</strong></p>`;
+                                    solved = true;
+                                    break;
+                                }
+                            }
+                            if (solved) break;
+                        }
+                        if (solved) break;
+                    }
+                }
+                
+                if (!solved) {
+                    console.log("Could not solve the puzzle in 3 moves.");
+                    resultsContent.innerHTML += `<p>Could not solve the puzzle in 3 moves.</p>`;
+                }
+                
+                // Compare with BFS result
+                if (solved) {
+                    const actualMoves = game.player.moveCount;
+                    resultsContent.innerHTML += `<p>Actual moves: ${actualMoves}</p>`;
+                    
+                    if (actualMoves === bfsResult.minMoves) {
+                        resultsContent.innerHTML += `<p><strong>FIX VERIFIED: Actual moves ${actualMoves} matches BFS minimum moves ${bfsResult.minMoves}.</strong></p>`;
+                    } else {
+                        resultsContent.innerHTML += `<p><strong>FIX FAILED: Actual moves ${actualMoves} does not match BFS minimum moves ${bfsResult.minMoves}.</strong></p>`;
+                    }
+                }
+            });
+        };
+    </script>
+</body>
+</html>

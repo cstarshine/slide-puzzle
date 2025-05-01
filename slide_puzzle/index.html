@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Ice Slide Puzzle</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <h1>Ice Slide Puzzle</h1>
+
+    <div id="game-container">
+        <canvas id="gameCanvas" width="500" height="500"></canvas>
+
+        <div class="controls">
+            <button id="newGameBtn">New Game</button>
+            <button id="resetBtn">Reset</button>
+            <input type="date" id="dateInput">
+            <button id="loadDateBtn">Load Date</button>
+        </div>
+
+        <div class="info">
+            <p id="dateDisplay"></p>
+            <p id="scoreDisplay">Moves: 0</p>
+            <p id="minMovesDisplay">Minimum Moves: 0</p>
+            <p id="solvableStatus"></p>
+        </div>
+    </div>
+
+    <script src="constants.js"></script>
+    <script src="utils.js"></script>
+    <script src="seededRandom.js"></script>
+    <script src="mapCreator.js"></script>
+    <script src="player.js"></script>
+    <script src="animation.js"></script>
+    <script src="renderer.js"></script>
+    <script src="inputHandler.js"></script>
+    <script src="gameManager.js"></script>
+    <script src="main.js"></script>
+</body>
+</html>
