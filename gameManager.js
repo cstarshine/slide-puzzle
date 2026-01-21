@@ -14,11 +14,6 @@ class GameManager {
     const today = new Date();
     this.currentDate = today.toISOString().split("T")[0];
 
-    const dateInput = document.getElementById("dateInput");
-    if (dateInput) {
-      dateInput.value = this.currentDate;
-    }
-
     this.generateMapFromDate(this.currentDate);
   }
 
@@ -60,28 +55,17 @@ class GameManager {
 
   generateMapFromDate(dateStr) {
     try {
-      const originalDate = dateStr;
-      this.currentDate = originalDate;
+      this.currentDate = dateStr;
 
       let dateObj = new Date(dateStr + "T00:00:00");
-      let currentDateTimeStr = dateObj.toISOString().split(".")[0];
+      let result = { solvable: false, minMoves: 0 }; // Initialize with default
 
-      this.currentSeed = Utils.hashString(currentDateTimeStr);
-
-      let result = null;
-      let allCellsReachable = false;
-      let attempts = 0;
-      const maxAttempts = 100;
-
-      // Loop until end of day (23:59:59)
       const endTime = new Date(dateStr + "T23:59:59").getTime();
       const startTime = dateObj.getTime();
       let success = false;
 
-      // Pass 1: Check seconds
       while (dateObj.getTime() <= endTime) {
         let currentDateTimeStr = dateObj.toISOString().split(".")[0];
-        // Ensure seed is updated every iteration
         this.currentSeed = Utils.hashString(currentDateTimeStr);
         this.currentDate = currentDateTimeStr;
 
@@ -94,17 +78,14 @@ class GameManager {
           break;
         }
 
-        // Increment time by 1 second
         dateObj.setSeconds(dateObj.getSeconds() + 1);
       }
 
-      // Pass 2: If seconds failed, reset and try milliseconds (100ms intervals)
       if (!success) {
-        console.log("Seconds pass failed. Trying milliseconds pass...");
         dateObj = new Date(startTime);
 
         while (dateObj.getTime() <= endTime) {
-          let currentDateTimeStr = dateObj.toISOString(); // Full string with MS
+          let currentDateTimeStr = dateObj.toISOString();
           this.currentSeed = Utils.hashString(currentDateTimeStr);
           this.currentDate = currentDateTimeStr;
 
@@ -121,26 +102,10 @@ class GameManager {
         }
       }
 
-      // If we couldn't find a solvable puzzle after max attempts
-      if (!result.solvable || result.minMoves === 0) {
-        console.warn(
-          "Could not generate a solvable puzzle with the current constraints",
-        );
-        document.getElementById("solvableStatus").textContent =
-          "Could not generate solvable puzzle!";
-        document.getElementById("solvableStatus").className = "unsolvable";
-        // You might want to return here or handle it differently
-        // For now, we allow the game to init but the user knows it's broken or just hard?
-        // Actually, preventing play is better if we strictly want solvable games.
-        // But let's at least show the warning.
-        document.getElementById("minMovesDisplay").textContent =
-          "Minimum Moves: N/A";
-      } else {
-        document.getElementById("minMovesDisplay").textContent =
-          `Minimum Moves: ${result.minMoves}`;
-
-        document.getElementById("solvableStatus").textContent = "";
-        document.getElementById("solvableStatus").className = "";
+      // Update UI with minimum moves
+      const minMovesDisplay = document.getElementById("minMovesDisplay");
+      if (minMovesDisplay && success && result) {
+        minMovesDisplay.textContent = `Minimum Moves: ${result.minMoves}`;
       }
 
       this.renderer = new Renderer(this.grid, this.player);
@@ -153,29 +118,10 @@ class GameManager {
         this.inputHandler = new InputHandler(this);
       }
 
-      this.updateDateDisplay();
-
       this.player.moveCount = 0;
       this.player.updateScoreDisplay();
     } catch (error) {
       console.error("Error generating map:", error);
-    }
-  }
-
-  updateDateDisplay() {
-    const dateDisplay = document.getElementById("dateDisplay");
-    if (dateDisplay) {
-      let displayText = "";
-      if (this.currentDate.includes("T")) {
-        const [datePart, timePart] = this.currentDate.split("T");
-        displayText = `Date: ${datePart} Time: ${timePart} (Seed: ${this.currentSeed})`;
-      } else if (this.currentDate.includes("(modified seed)")) {
-        const datePart = this.currentDate.split(" (modified seed)")[0];
-        displayText = `Date: ${datePart} (Modified Seed: ${this.currentSeed})`;
-      } else {
-        displayText = `Date: ${this.currentDate} (Seed: ${this.currentSeed})`;
-      }
-      dateDisplay.textContent = displayText;
     }
   }
 

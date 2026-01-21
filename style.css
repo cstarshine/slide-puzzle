@@ -51,37 +51,8 @@ button:hover {
   background-color: #0078e7;
 }
 
-input[type="date"] {
-  padding: 8px;
-  border: 1px solid #1e90ff;
-  border-radius: 4px;
-  font-size: 16px;
-  margin-right: 5px;
-}
-
 .info {
   margin-top: 10px;
   color: #333;
   text-align: center;
-}
-
-#solvableStatus {
-  margin-top: 10px;
-  font-weight: bold;
-}
-
-#dateDisplay {
-  font-weight: bold;
-  color: #1e90ff;
-  margin-bottom: 10px;
-}
-
-.solvable {
-  color: green;
-  font-weight: bold;
-}
-
-.unsolvable {
-  color: red;
-  font-weight: bold;
 }
