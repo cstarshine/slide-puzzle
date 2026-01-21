@@ -1,4 +1,5 @@
-body, html {
+body,
+html {
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -67,15 +68,6 @@ input[type="date"] {
 #solvableStatus {
   margin-top: 10px;
   font-weight: bold;
-}
-
-.solvable {
-  color: green;
-}
-
-.unsolvable {
-  color: red;
-}
 }
 
 #dateDisplay {

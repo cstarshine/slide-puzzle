@@ -10,30 +10,47 @@ class InputHandler {
     this.game = game;
     this.touchStartX = 0;
     this.touchStartY = 0;
-    this.minSwipeDistance = 30;
+    // Lower threshold for better sensitivity
+    this.minSwipeDistance = 20;
+
+    // Bind methods once to ensure 'this' context is always correct
+    this.handleKeyDown = this.handleKeyDown.bind(this);
+    this.handleTouchStart = this.handleTouchStart.bind(this);
+    this.handleTouchMove = this.handleTouchMove.bind(this);
+    this.handleTouchEnd = this.handleTouchEnd.bind(this);
+    this.handleTouchCancel = this.handleTouchCancel.bind(this);
+
     this.setupEventListeners();
   }
 
   setupEventListeners() {
-    document.addEventListener("keydown", this.handleKeyDown.bind(this));
-    document.addEventListener("touchstart", this.handleTouchStart.bind(this), {
+    // Keyboard events
+    document.addEventListener("keydown", this.handleKeyDown);
+
+    // Touch events - Attached to document to catch swipes anywhere
+    // Passive: false is required to use preventDefault() in touchmove
+    document.addEventListener("touchstart", this.handleTouchStart, {
       passive: false,
     });
-    document.addEventListener("touchmove", this.handleTouchMove.bind(this), {
+    document.addEventListener("touchmove", this.handleTouchMove, {
       passive: false,
     });
-    document.addEventListener("touchend", this.handleTouchEnd.bind(this), {
+    document.addEventListener("touchend", this.handleTouchEnd, {
+      passive: false,
+    });
+    document.addEventListener("touchcancel", this.handleTouchCancel, {
       passive: false,
     });
 
+    // UI Buttons
     const newGameBtn = document.getElementById("newGameBtn");
     if (newGameBtn) {
-      newGameBtn.addEventListener("click", () => this.game.initGame());
+      newGameBtn.addEventListener("click", () => this.game?.initGame());
     }
 
     const resetBtn = document.getElementById("resetBtn");
     if (resetBtn) {
-      resetBtn.addEventListener("click", () => this.game.resetPlayer());
+      resetBtn.addEventListener("click", () => this.game?.resetPlayer());
     }
 
     const loadDateBtn = document.getElementById("loadDateBtn");
@@ -42,7 +59,6 @@ class InputHandler {
         const dateInput = document.getElementById("dateInput");
         if (dateInput && dateInput.value) {
           this.game.generateMapFromDate(dateInput.value);
-        } else {
         }
       });
     }
@@ -50,12 +66,12 @@ class InputHandler {
 
   /**
    * Handle key down events
-   * @param {Event} e - Key event
+   * @param {KeyboardEvent} e - Key event
    */
   handleKeyDown(e) {
-    if (this.game.animation.isAnimating) return;
+    if (this.game.animation && this.game.animation.isAnimating) return;
 
-    let direction;
+    let direction = null;
     switch (e.key) {
       case "ArrowUp":
         direction = UP;
@@ -69,11 +85,11 @@ class InputHandler {
       case "ArrowLeft":
         direction = LEFT;
         break;
-      default:
-        return; // Not an arrow key
     }
 
-    this.game.movePlayer(direction);
+    if (direction !== null) {
+      this.game.movePlayer(direction);
+    }
   }
 
   /**
@@ -81,8 +97,12 @@ class InputHandler {
    * @param {TouchEvent} e
    */
   handleTouchStart(e) {
-    this.touchStartX = e.changedTouches[0].clientX;
-    this.touchStartY = e.changedTouches[0].clientY;
+    // We don't preventDefault here to allow button clicks to process normally
+
+    if (e.changedTouches && e.changedTouches.length > 0) {
+      this.touchStartX = e.changedTouches[0].clientX;
+      this.touchStartY = e.changedTouches[0].clientY;
+    }
   }
 
   /**
@@ -90,7 +110,10 @@ class InputHandler {
    * @param {TouchEvent} e
    */
   handleTouchMove(e) {
-    e.preventDefault();
+    // Strictly prevent default to stop scrolling/pull-to-refresh
+    if (e.cancelable) {
+      e.preventDefault();
+    }
   }
 
   /**
@@ -98,7 +121,9 @@ class InputHandler {
    * @param {TouchEvent} e
    */
   handleTouchEnd(e) {
-    if (this.game.animation.isAnimating) return;
+    if (this.game.animation && this.game.animation.isAnimating) return;
+
+    if (!e.changedTouches || e.changedTouches.length === 0) return;
 
     const touchEndX = e.changedTouches[0].clientX;
     const touchEndY = e.changedTouches[0].clientY;
@@ -128,5 +153,13 @@ class InputHandler {
         }
       }
     }
+  }
+
+  /**
+   * Resets touch coordinates if touch is cancelled
+   */
+  handleTouchCancel(e) {
+    this.touchStartX = 0;
+    this.touchStartY = 0;
   }
 }
