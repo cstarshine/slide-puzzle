@@ -35,6 +35,8 @@ canvas {
   display: flex;
   gap: 10px;
   margin-bottom: 20px;
+  align-items: center;
+  justify-content: center;
 }
 
 button {
@@ -49,10 +51,4 @@ button {
 
 button:hover {
   background-color: #0078e7;
-}
-
-.info {
-  margin-top: 10px;
-  color: #333;
-  text-align: center;
 }
