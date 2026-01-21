@@ -1,4 +1,4 @@
-body {
+body, html {
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -7,6 +7,9 @@ body {
   margin: 0;
   background-color: #f0f8ff;
   font-family: Arial, sans-serif;
+  touch-action: none; /* Prevent default touch actions like pull-to-refresh or scrolling */
+  overscroll-behavior: none; /* Prevent bounce effects */
+  overflow: hidden; /* Strictly prevent scrolling */
 }
 
 h1 {
@@ -58,6 +61,21 @@ input[type="date"] {
 .info {
   margin-top: 10px;
   color: #333;
+  text-align: center;
+}
+
+#solvableStatus {
+  margin-top: 10px;
+  font-weight: bold;
+}
+
+.solvable {
+  color: green;
+}
+
+.unsolvable {
+  color: red;
+}
 }
 
 #dateDisplay {

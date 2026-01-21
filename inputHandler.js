@@ -19,6 +19,9 @@ class InputHandler {
     document.addEventListener("touchstart", this.handleTouchStart.bind(this), {
       passive: false,
     });
+    document.addEventListener("touchmove", this.handleTouchMove.bind(this), {
+      passive: false,
+    });
     document.addEventListener("touchend", this.handleTouchEnd.bind(this), {
       passive: false,
     });
@@ -80,6 +83,14 @@ class InputHandler {
   handleTouchStart(e) {
     this.touchStartX = e.changedTouches[0].clientX;
     this.touchStartY = e.changedTouches[0].clientY;
+  }
+
+  /**
+   * Handle touch move event to prevent scrolling
+   * @param {TouchEvent} e
+   */
+  handleTouchMove(e) {
+    e.preventDefault();
   }
 
   /**
