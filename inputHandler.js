@@ -8,12 +8,12 @@ class InputHandler {
    */
   constructor(game) {
     this.game = game;
-    this.setupEventListeners();
+    this.touchStartX = 0;
+    this.touchStartY = 0;
+    this.minSwipeDistance = 30;
+    setupEventListeners();
   }
 
-  /**
-   * Set up event listeners
-   */
   setupEventListeners() {
     document.addEventListener("keydown", this.handleKeyDown.bind(this));
 
@@ -65,5 +65,51 @@ class InputHandler {
     }
 
     this.game.movePlayer(direction);
+  }
+
+  /**
+   * Handle touch start event
+   * @param {TouchEvent} e
+   */
+  handleTouchStart(e) {
+    this.touchStartX = e.changedTouches[0].clientX;
+    this.touchStartY = e.changedTouches[0].clientY;
+  }
+
+  /**
+   * Handle touch end event to detect swipes
+   * @param {TouchEvent} e
+   */
+  handleTouchEnd(e) {
+    if (this.game.animation.isAnimating) return;
+
+    const touchEndX = e.changedTouches[0].clientX;
+    const touchEndY = e.changedTouches[0].clientY;
+
+    const dx = touchEndX - this.touchStartX;
+    const dy = touchEndY - this.touchStartY;
+
+    // Check if movement is significant enough
+    if (
+      Math.abs(dx) > this.minSwipeDistance ||
+      Math.abs(dy) > this.minSwipeDistance
+    ) {
+      // Determine mainly horizontal or vertical swipe
+      if (Math.abs(dx) > Math.abs(dy)) {
+        // Horizontal
+        if (dx > 0) {
+          this.game.movePlayer(RIGHT);
+        } else {
+          this.game.movePlayer(LEFT);
+        }
+      } else {
+        // Vertical
+        if (dy > 0) {
+          this.game.movePlayer(DOWN);
+        } else {
+          this.game.movePlayer(UP);
+        }
+      }
+    }
   }
 }

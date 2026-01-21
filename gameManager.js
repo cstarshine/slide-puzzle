@@ -22,6 +22,42 @@ class GameManager {
     this.generateMapFromDate(this.currentDate);
   }
 
+  performMapGenerationAttempt() {
+    this.grid = new MapCreator(this.rng);
+    this.grid.initialize();
+
+    this.player = new Player(this.grid, this.rng);
+    this.player.place();
+
+    this.grid.placeTarget(this.player.pos);
+
+    let result = this.grid.checkSolvable(this.player.initialPos, true);
+    let allCellsReachable = this.grid.checkAllCellsReachable(
+      this.player.initialPos,
+    );
+
+    if (result.solvable && allCellsReachable && result.minMoves >= 4) {
+      return { success: true, result };
+    }
+
+    if (result.solvable && allCellsReachable && result.minMoves < 4) {
+      this.grid.setCellType(
+        this.grid.targetPos.x,
+        this.grid.targetPos.y,
+        EMPTY,
+      );
+
+      this.grid.placeTarget(this.player.pos);
+
+      result = this.grid.checkSolvable(this.player.initialPos, true);
+
+      if (result.solvable && result.minMoves >= 4) {
+        return { success: true, result };
+      }
+    }
+    return { success: false, result };
+  }
+
   generateMapFromDate(dateStr) {
     try {
       const originalDate = dateStr;
@@ -37,60 +73,74 @@ class GameManager {
       let attempts = 0;
       const maxAttempts = 100;
 
-      while (attempts < maxAttempts) {
-        attempts++;
+      // Loop until end of day (23:59:59)
+      const endTime = new Date(dateStr + "T23:59:59").getTime();
+      const startTime = dateObj.getTime();
+      let success = false;
+
+      // Pass 1: Check seconds
+      while (dateObj.getTime() <= endTime) {
+        let currentDateTimeStr = dateObj.toISOString().split(".")[0];
+        // Ensure seed is updated every iteration
+        this.currentSeed = Utils.hashString(currentDateTimeStr);
+        this.currentDate = currentDateTimeStr;
 
         this.rng = new SeededRandom(this.currentSeed);
 
-        this.grid = new MapCreator(this.rng);
-        this.grid.initialize();
-
-        this.player = new Player(this.grid, this.rng);
-        this.player.place();
-
-        this.grid.placeTarget(this.player.pos);
-
-        result = this.grid.checkSolvable(this.player.initialPos, true);
-        allCellsReachable = this.grid.checkAllCellsReachable(
-          this.player.initialPos,
-        );
-
-        if (result.solvable && allCellsReachable && result.minMoves >= 4) {
+        const attempt = this.performMapGenerationAttempt();
+        if (attempt.success) {
+          success = true;
+          result = attempt.result;
           break;
         }
 
-        if (result.solvable && allCellsReachable && result.minMoves < 4) {
-          this.grid.setCellType(
-            this.grid.targetPos.x,
-            this.grid.targetPos.y,
-            EMPTY,
-          );
-
-          this.grid.placeTarget(this.player.pos);
-
-          result = this.grid.checkSolvable(this.player.initialPos, true);
-
-          if (result.solvable && result.minMoves >= 4) {
-            break;
-          }
-        }
-
+        // Increment time by 1 second
         dateObj.setSeconds(dateObj.getSeconds() + 1);
+      }
 
-        const originalDatePart = originalDate.split("T")[0];
-        const newDatePart = dateObj.toISOString().split("T")[0];
+      // Pass 2: If seconds failed, reset and try milliseconds (100ms intervals)
+      if (!success) {
+        console.log("Seconds pass failed. Trying milliseconds pass...");
+        dateObj = new Date(startTime);
 
-        if (newDatePart !== originalDatePart) {
-          dateObj = new Date(originalDate + "T00:00:00");
-
-          this.currentSeed =
-            Utils.hashString(originalDate + "T00:00:00") + attempts;
-          this.currentDate = originalDate + " (modified seed)";
-        } else {
-          currentDateTimeStr = dateObj.toISOString().split(".")[0];
+        while (dateObj.getTime() <= endTime) {
+          let currentDateTimeStr = dateObj.toISOString(); // Full string with MS
           this.currentSeed = Utils.hashString(currentDateTimeStr);
           this.currentDate = currentDateTimeStr;
+
+          this.rng = new SeededRandom(this.currentSeed);
+
+          const attempt = this.performMapGenerationAttempt();
+          if (attempt.success) {
+            success = true;
+            result = attempt.result;
+            break;
+          }
+
+          dateObj.setMilliseconds(dateObj.getMilliseconds() + 100);
         }
+      }
+
+      // If we couldn't find a solvable puzzle after max attempts
+      if (!result.solvable || result.minMoves === 0) {
+        console.warn(
+          "Could not generate a solvable puzzle with the current constraints",
+        );
+        document.getElementById("solvableStatus").textContent =
+          "Could not generate solvable puzzle!";
+        document.getElementById("solvableStatus").className = "unsolvable";
+        // You might want to return here or handle it differently
+        // For now, we allow the game to init but the user knows it's broken or just hard?
+        // Actually, preventing play is better if we strictly want solvable games.
+        // But let's at least show the warning.
+        document.getElementById("minMovesDisplay").textContent =
+          "Minimum Moves: N/A";
+      } else {
+        document.getElementById("minMovesDisplay").textContent =
+          `Minimum Moves: ${result.minMoves}`;
+
+        document.getElementById("solvableStatus").textContent = "";
+        document.getElementById("solvableStatus").className = "";
       }
 
       this.renderer = new Renderer(this.grid, this.player);
@@ -107,12 +157,6 @@ class GameManager {
 
       this.player.moveCount = 0;
       this.player.updateScoreDisplay();
-
-      document.getElementById("minMovesDisplay").textContent =
-        `Minimum Moves: ${result.minMoves}`;
-
-      document.getElementById("solvableStatus").textContent = "";
-      document.getElementById("solvableStatus").className = "";
     } catch (error) {
       console.error("Error generating map:", error);
     }
