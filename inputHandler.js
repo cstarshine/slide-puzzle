@@ -11,11 +11,17 @@ class InputHandler {
     this.touchStartX = 0;
     this.touchStartY = 0;
     this.minSwipeDistance = 30;
-    setupEventListeners();
+    this.setupEventListeners();
   }
 
   setupEventListeners() {
     document.addEventListener("keydown", this.handleKeyDown.bind(this));
+    document.addEventListener("touchstart", this.handleTouchStart.bind(this), {
+      passive: false,
+    });
+    document.addEventListener("touchend", this.handleTouchEnd.bind(this), {
+      passive: false,
+    });
 
     const newGameBtn = document.getElementById("newGameBtn");
     if (newGameBtn) {
