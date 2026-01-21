@@ -17,7 +17,7 @@ class GameManager {
     this.generateMapFromDate(this.currentDate);
   }
 
-  performMapGenerationAttempt() {
+  performMapGenerationAttempt(minDifficulty) {
     this.grid = new MapCreator(this.rng);
     this.grid.initialize();
 
@@ -26,31 +26,78 @@ class GameManager {
 
     this.grid.placeTarget(this.player.pos);
 
-    let result = this.grid.checkSolvable(this.player.initialPos, true);
+    let result = this.grid.checkSolvable(
+      this.player.initialPos,
+      minDifficulty,
+      true,
+    );
     let allCellsReachable = this.grid.checkAllCellsReachable(
       this.player.initialPos,
     );
 
-    if (result.solvable && allCellsReachable && result.minMoves >= 4) {
+    if (result.solvable && allCellsReachable) {
       return { success: true, result };
     }
 
-    if (result.solvable && allCellsReachable && result.minMoves < 4) {
-      this.grid.setCellType(
-        this.grid.targetPos.x,
-        this.grid.targetPos.y,
-        EMPTY,
-      );
+    // Retry target placement if failed (might be too easy or unreachable)
+    // We try to place target one more time to see if we get a better spot
+    this.grid.setCellType(this.grid.targetPos.x, this.grid.targetPos.y, EMPTY);
 
-      this.grid.placeTarget(this.player.pos);
+    this.grid.placeTarget(this.player.pos);
 
-      result = this.grid.checkSolvable(this.player.initialPos, true);
+    result = this.grid.checkSolvable(
+      this.player.initialPos,
+      minDifficulty,
+      true,
+    );
 
-      if (result.solvable && result.minMoves >= 4) {
-        return { success: true, result };
-      }
+    if (result.solvable && result.minMoves >= minDifficulty) {
+      return { success: true, result };
     }
+
     return { success: false, result };
+  }
+
+  tryGenerateLoop(startTime, endTime, minDifficulty) {
+    let dateObj = new Date(startTime);
+
+    // First pass: check seconds
+    while (dateObj.getTime() <= endTime) {
+      let currentDateTimeStr = dateObj.toISOString().split(".")[0];
+      this.currentSeed = Utils.hashString(currentDateTimeStr);
+      this.currentDate = currentDateTimeStr;
+
+      this.rng = new SeededRandom(this.currentSeed);
+
+      const attempt = this.performMapGenerationAttempt(minDifficulty);
+      if (attempt.success) {
+        return { success: true, result: attempt.result };
+      }
+
+      dateObj.setSeconds(dateObj.getSeconds() + 1);
+    }
+
+    // Second pass: check milliseconds (if needed, though this is very intensive)
+    // To match original logic's thoroughness but respecting the fallback tiers:
+    // We might skip this for the high difficulties if performance is an issue,
+    // but the user's original code had it. I will keep it.
+    dateObj = new Date(startTime);
+    while (dateObj.getTime() <= endTime) {
+      let currentDateTimeStr = dateObj.toISOString();
+      this.currentSeed = Utils.hashString(currentDateTimeStr);
+      this.currentDate = currentDateTimeStr;
+
+      this.rng = new SeededRandom(this.currentSeed);
+
+      const attempt = this.performMapGenerationAttempt(minDifficulty);
+      if (attempt.success) {
+        return { success: true, result: attempt.result };
+      }
+
+      dateObj.setMilliseconds(dateObj.getMilliseconds() + 100);
+    }
+
+    return null;
   }
 
   generateMapFromDate(dateStr) {
@@ -58,54 +105,43 @@ class GameManager {
       this.currentDate = dateStr;
 
       let dateObj = new Date(dateStr + "T00:00:00");
-      let result = { solvable: false, minMoves: 0 }; // Initialize with default
+      let result = { solvable: false, minMoves: 0 };
 
       const endTime = new Date(dateStr + "T23:59:59").getTime();
       const startTime = dateObj.getTime();
       let success = false;
+      let foundAttempt = null;
 
-      while (dateObj.getTime() <= endTime) {
-        let currentDateTimeStr = dateObj.toISOString().split(".")[0];
-        this.currentSeed = Utils.hashString(currentDateTimeStr);
-        this.currentDate = currentDateTimeStr;
+      // Tier 1: Try Hard Difficulty
+      foundAttempt = this.tryGenerateLoop(
+        startTime,
+        endTime,
+        MIN_DIFFICULTY_MOVES,
+      );
 
-        this.rng = new SeededRandom(this.currentSeed);
-
-        const attempt = this.performMapGenerationAttempt();
-        if (attempt.success) {
-          success = true;
-          result = attempt.result;
-          break;
-        }
-
-        dateObj.setSeconds(dateObj.getSeconds() + 1);
+      // Tier 2: Try Medium Difficulty
+      if (!foundAttempt) {
+        console.log("Failed to generate hard map, trying medium...");
+        foundAttempt = this.tryGenerateLoop(startTime, endTime, 4);
       }
 
-      if (!success) {
-        dateObj = new Date(startTime);
-
-        while (dateObj.getTime() <= endTime) {
-          let currentDateTimeStr = dateObj.toISOString();
-          this.currentSeed = Utils.hashString(currentDateTimeStr);
-          this.currentDate = currentDateTimeStr;
-
-          this.rng = new SeededRandom(this.currentSeed);
-
-          const attempt = this.performMapGenerationAttempt();
-          if (attempt.success) {
-            success = true;
-            result = attempt.result;
-            break;
-          }
-
-          dateObj.setMilliseconds(dateObj.getMilliseconds() + 100);
-        }
+      // Tier 3: Try Any Difficulty
+      if (!foundAttempt) {
+        console.log("Failed to generate medium map, trying any...");
+        foundAttempt = this.tryGenerateLoop(startTime, endTime, 1);
       }
 
-      // Update UI with minimum moves
+      if (foundAttempt) {
+        success = true;
+        result = foundAttempt.result;
+        this.currentMinMoves = result.minMoves; // Store for win condition
+      }
+
+      // Update UI with minimum moves - HIDDEN as per request
       const minMovesDisplay = document.getElementById("minMovesDisplay");
-      if (minMovesDisplay && success && result) {
-        minMovesDisplay.textContent = `Minimum Moves: ${result.minMoves}`;
+      if (minMovesDisplay) {
+        // Clear it or hide it. User said "Hide during play"
+        minMovesDisplay.textContent = "";
       }
 
       this.renderer = new Renderer(this.grid, this.player);
@@ -143,7 +179,7 @@ class GameManager {
   checkWinCondition() {
     if (Utils.arePositionsEqual(this.player.pos, this.grid.targetPos)) {
       setTimeout(() => {
-        this.initGame();
+        alert(`Clear! Minimum Moves: ${this.currentMinMoves}`);
       }, 100);
     }
   }

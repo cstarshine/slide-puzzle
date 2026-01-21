@@ -180,7 +180,14 @@ class MapCreator {
     }
   }
 
-  checkSolvable(initialPlayerPos, silent = false) {
+  /**
+   * Check if the puzzle is solvable using BFS
+   * @param {Object} initialPlayerPos - Initial player position {x, y}
+   * @param {number} minDifficulty - Minimum expected moves (default 1)
+   * @param {boolean} silent - Whether to update UI (deprecated)
+   * @returns {Object} - Object containing solvable status and minimum moves
+   */
+  checkSolvable(initialPlayerPos, minDifficulty = 1, silent = false) {
     const queue = [];
     const visited = new Set();
 
@@ -198,6 +205,8 @@ class MapCreator {
       const current = queue.shift();
 
       if (current.x === this.targetPos.x && current.y === this.targetPos.y) {
+        if (current.moves < minDifficulty)
+          return { solvable: false, minMoves: 0 };
         return { solvable: true, minMoves: current.moves };
       }
 
@@ -206,7 +215,10 @@ class MapCreator {
         const { endPos, path } = moveResult;
 
         if (endPos.x === this.targetPos.x && endPos.y === this.targetPos.y) {
-          return { solvable: true, minMoves: current.moves + 1 };
+          const totalMoves = current.moves + 1;
+          if (totalMoves < minDifficulty)
+            return { solvable: false, minMoves: 0 };
+          return { solvable: true, minMoves: totalMoves };
         }
 
         const posKey = `${endPos.x},${endPos.y}`;
