@@ -1,12 +1,4 @@
-/**
- * Player class to manage player state and movement
- */
 class Player {
-  /**
-   * Create a new Player
-   * @param {MapCreator} grid - Game grid
-   * @param {SeededRandom} rng - Random number generator
-   */
   constructor(grid, rng) {
     this.grid = grid;
     this.rng = rng;
@@ -16,11 +8,7 @@ class Player {
     this.moveCount = 0;
   }
 
-  /**
-   * Place the player on the grid
-   */
   place() {
-    // Place player using seeded RNG
     do {
       this.pos.x = this.rng.randomInt(1, GRID_SIZE - 2);
       this.pos.y = this.rng.randomInt(1, GRID_SIZE - 2);
@@ -29,50 +17,33 @@ class Player {
     this.grid.setCellType(this.pos.x, this.pos.y, PLAYER);
     this.initialPos = { ...this.pos };
 
-    // Initialize pixel position
     this.pixelPos = {
       x: this.pos.x * CELL_SIZE + CELL_SIZE / 2,
       y: this.pos.y * CELL_SIZE + CELL_SIZE / 2,
     };
   }
 
-  /**
-   * Reset player to initial position
-   */
   reset() {
-    // Remove player from current position
     this.grid.setCellType(this.pos.x, this.pos.y, EMPTY);
 
-    // Reset player position
     this.pos = { ...this.initialPos };
     this.grid.setCellType(this.pos.x, this.pos.y, PLAYER);
 
-    // Reset pixel position
     this.pixelPos = {
       x: this.pos.x * CELL_SIZE + CELL_SIZE / 2,
       y: this.pos.y * CELL_SIZE + CELL_SIZE / 2,
     };
 
-    // Reset move counter
     this.moveCount = 0;
     this.updateScoreDisplay();
   }
 
-  /**
-   * Update the score display
-   */
   updateScoreDisplay() {
     document.getElementById("scoreDisplay").textContent =
       `Moves: ${this.moveCount}`;
   }
 
-  /**
-   * Calculate the path for a move in a specific direction
-   * @param {number} direction - Direction to move
-   * @returns {Array} - Array of positions along the path
-   */
   calculateMovePath(direction) {
-    // Use grid's simulateMove to ensure consistency
     const { path } = this.grid.simulateMove(this.pos, direction);
     return path;
   }

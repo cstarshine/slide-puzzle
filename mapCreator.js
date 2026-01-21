@@ -198,15 +198,10 @@ class MapCreator {
         x = nextX;
         y = nextY;
         path.push({ x, y });
-
-        // Check target
-        if (x === this.targetPos.x && y === this.targetPos.y) {
-          hitTarget = true;
-          moving = false; // Stop at target (Player matches this behavior)
-        }
+        // Targeted check removed: Player slides through target
       }
     }
-    return { endPos: { x, y }, hitTarget, path };
+    return { endPos: { x, y }, path };
   }
 
   /**
@@ -296,9 +291,10 @@ class MapCreator {
       // Try all four directions
       for (let dir = 0; dir < 4; dir++) {
         const moveResult = this.simulateMove(current, dir);
-        const { endPos, hitTarget, path } = moveResult;
+        const { endPos, path } = moveResult;
 
-        if (hitTarget) {
+        // Check if we reached the target at the END of the move
+        if (endPos.x === this.targetPos.x && endPos.y === this.targetPos.y) {
           // Win detected
           if (!silent) {
             document.getElementById("solvableStatus").textContent =
