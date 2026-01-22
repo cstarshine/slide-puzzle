@@ -6,6 +6,8 @@ class Renderer {
     this.ctx = null;
 
     if (this.canvas) {
+      this.canvas.width = CANVAS_SIZE;
+      this.canvas.height = CANVAS_SIZE;
       this.ctx = this.canvas.getContext("2d");
     } else {
       console.error("Canvas element not found");

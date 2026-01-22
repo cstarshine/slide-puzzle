@@ -1,6 +1,6 @@
 // Game constants
 const CELL_SIZE = 50;
-const GRID_SIZE = 10;
+const GRID_SIZE = 12;
 const CANVAS_SIZE = CELL_SIZE * GRID_SIZE;
 
 // Cell types

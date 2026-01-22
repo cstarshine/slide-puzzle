@@ -29,6 +29,11 @@ canvas {
   background-color: #e6f2ff;
   margin-bottom: 20px;
   touch-action: none;
+  max-width: 95vw;
+  max-height: 70vh;
+  width: auto;
+  height: auto;
+  aspect-ratio: 1 / 1;
 }
 
 .controls {
