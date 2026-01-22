@@ -8,7 +8,7 @@ const EMPTY = 0;
 const WALL = 1;
 const PLAYER = 2;
 const TARGET = 3;
-const MIN_DIFFICULTY_MOVES = 6;
+const MIN_DIFFICULTY_MOVES = 7;
 
 // Directions
 const UP = 0;

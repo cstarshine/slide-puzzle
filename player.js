@@ -24,7 +24,13 @@ class Player {
   }
 
   reset() {
-    this.grid.setCellType(this.pos.x, this.pos.y, EMPTY);
+    // If the player is currently on the target position, restore the TARGET type
+    // Otherwise set it to EMPTY
+    if (Utils.arePositionsEqual(this.pos, this.grid.targetPos)) {
+      this.grid.setCellType(this.pos.x, this.pos.y, TARGET);
+    } else {
+      this.grid.setCellType(this.pos.x, this.pos.y, EMPTY);
+    }
 
     this.pos = { ...this.initialPos };
     this.grid.setCellType(this.pos.x, this.pos.y, PLAYER);
