@@ -14,7 +14,17 @@ class GameManager {
     const today = new Date();
     this.currentDate = today.toISOString().split("T")[0];
 
+    this.initModalEvents();
     this.generateMapFromDate(this.currentDate);
+  }
+
+  initModalEvents() {
+    const shareBtn = document.getElementById("shareBtn");
+    const closeModalBtn = document.getElementById("closeModalBtn");
+
+    if (shareBtn) shareBtn.addEventListener("click", () => this.shareResult());
+    if (closeModalBtn)
+      closeModalBtn.addEventListener("click", () => this.closeClearModal());
   }
 
   performMapGenerationAttempt(minDifficulty) {
@@ -39,8 +49,6 @@ class GameManager {
       return { success: true, result };
     }
 
-    // Retry target placement if failed (might be too easy or unreachable)
-    // We try to place target one more time to see if we get a better spot
     this.grid.setCellType(this.grid.targetPos.x, this.grid.targetPos.y, EMPTY);
 
     this.grid.placeTarget(this.player.pos);
@@ -61,7 +69,6 @@ class GameManager {
   tryGenerateLoop(startTime, endTime, minDifficulty) {
     let dateObj = new Date(startTime);
 
-    // First pass: check seconds
     while (dateObj.getTime() <= endTime) {
       let currentDateTimeStr = dateObj.toISOString().split(".")[0];
       this.currentSeed = Utils.hashString(currentDateTimeStr);
@@ -77,10 +84,6 @@ class GameManager {
       dateObj.setSeconds(dateObj.getSeconds() + 1);
     }
 
-    // Second pass: check milliseconds (if needed, though this is very intensive)
-    // To match original logic's thoroughness but respecting the fallback tiers:
-    // We might skip this for the high difficulties if performance is an issue,
-    // but the user's original code had it. I will keep it.
     dateObj = new Date(startTime);
     while (dateObj.getTime() <= endTime) {
       let currentDateTimeStr = dateObj.toISOString();
@@ -112,20 +115,17 @@ class GameManager {
       let success = false;
       let foundAttempt = null;
 
-      // Tier 1: Try Hard Difficulty
       foundAttempt = this.tryGenerateLoop(
         startTime,
         endTime,
         MIN_DIFFICULTY_MOVES,
       );
 
-      // Tier 2: Try Medium Difficulty
       if (!foundAttempt) {
         console.log("Failed to generate hard map, trying medium...");
         foundAttempt = this.tryGenerateLoop(startTime, endTime, 4);
       }
 
-      // Tier 3: Try Any Difficulty
       if (!foundAttempt) {
         console.log("Failed to generate medium map, trying any...");
         foundAttempt = this.tryGenerateLoop(startTime, endTime, 1);
@@ -134,13 +134,11 @@ class GameManager {
       if (foundAttempt) {
         success = true;
         result = foundAttempt.result;
-        this.currentMinMoves = result.minMoves; // Store for win condition
+        this.currentMinMoves = result.minMoves;
       }
 
-      // Update UI with minimum moves - HIDDEN as per request
       const minMovesDisplay = document.getElementById("minMovesDisplay");
       if (minMovesDisplay) {
-        // Clear it or hide it. User said "Hide during play"
         minMovesDisplay.textContent = "";
       }
 
@@ -179,9 +177,83 @@ class GameManager {
   checkWinCondition() {
     if (Utils.arePositionsEqual(this.player.pos, this.grid.targetPos)) {
       setTimeout(() => {
-        alert(`Clear! Minimum Moves: ${this.currentMinMoves}`);
+        this.showClearModal();
       }, 100);
     }
+  }
+
+  showClearModal() {
+    const modal = document.getElementById("clearModal");
+    const statsDiv = document.getElementById("clearStats");
+
+    let moveDiff = this.player.moveCount - this.currentMinMoves;
+    let diffStr = moveDiff <= 0 ? " (Perfect!)" : ` (+${moveDiff})`;
+
+    statsDiv.innerHTML = `
+      Date: ${this.currentDate}<br>
+      Moves: <strong>${this.player.moveCount}</strong>${diffStr}<br>
+      Minimum Moves: ${this.currentMinMoves}
+    `;
+
+    modal.style.display = "flex";
+  }
+
+  closeClearModal() {
+    const modal = document.getElementById("clearModal");
+    modal.style.display = "none";
+  }
+
+  shareResult() {
+    const diff = this.player.moveCount - this.currentMinMoves;
+    const diffStr = diff > 0 ? ` (+${diff})` : " (Perfect!)";
+
+    const text = `Ice Slide Puzzle ${this.currentDate}\nMoves: ${this.player.moveCount} / ${this.currentMinMoves}${diffStr}\n\nCan you beat the ice? 🧊`;
+
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard
+        .writeText(text)
+        .then(() => {
+          this.showToast("Copied to clipboard!");
+        })
+        .catch((err) => {
+          console.error("Clipboard API failed: ", err);
+          this.fallbackCopyText(text);
+        });
+    } else {
+      this.fallbackCopyText(text);
+    }
+  }
+
+  fallbackCopyText(text) {
+    const textArea = document.createElement("textarea");
+    textArea.value = text;
+
+    textArea.style.position = "fixed";
+    textArea.style.left = "-9999px";
+    document.body.appendChild(textArea);
+
+    textArea.focus();
+    textArea.select();
+
+    try {
+      const successful = document.execCommand("copy");
+      const msg = successful ? "Copied to clipboard!" : "Failed to copy text";
+      this.showToast(msg);
+    } catch (err) {
+      console.error("Fallback copy failed", err);
+      this.showToast("Failed to copy");
+    }
+
+    document.body.removeChild(textArea);
+  }
+
+  showToast(message) {
+    const toast = document.getElementById("toast");
+    toast.textContent = message;
+    toast.className = "toast show";
+    setTimeout(function () {
+      toast.className = toast.className.replace("show", "");
+    }, 3000);
   }
 
   resetPlayer() {

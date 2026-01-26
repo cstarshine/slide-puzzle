@@ -57,3 +57,85 @@ button {
 button:hover {
   background-color: #0078e7;
 }
+
+/* Modal Styles */
+.modal {
+  display: none; /* Hidden by default */
+  position: fixed;
+  z-index: 1000;
+  left: 0;
+  top: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0, 0, 0, 0.5); /* Black w/ opacity */
+  align-items: center;
+  justify-content: center;
+}
+
+.modal-content {
+  background-color: #fefefe;
+  padding: 30px;
+  border: 2px solid #1e90ff;
+  border-radius: 10px;
+  width: 80%;
+  max-width: 400px;
+  text-align: center;
+  box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+}
+
+.modal h2 {
+  color: #1e90ff;
+  margin-top: 0;
+}
+
+.stats-container {
+  margin: 20px 0;
+  font-size: 18px;
+  line-height: 1.6;
+  color: #333;
+}
+
+.modal-buttons {
+  display: flex;
+  justify-content: center;
+  gap: 10px;
+  margin-top: 20px;
+}
+
+.primary-btn {
+  background-color: #1e90ff;
+  color: white;
+}
+
+.secondary-btn {
+  background-color: #ddd;
+  color: #333;
+}
+
+.secondary-btn:hover {
+  background-color: #ccc;
+}
+
+/* Toast Styles */
+.toast {
+  visibility: hidden;
+  min-width: 250px;
+  background-color: #333;
+  color: #fff;
+  text-align: center;
+  border-radius: 4px;
+  padding: 16px;
+  position: fixed;
+  z-index: 1001;
+  left: 50%;
+  bottom: 30px;
+  transform: translateX(-50%);
+  font-size: 17px;
+  opacity: 0;
+  transition: opacity 0.3s;
+}
+
+.toast.show {
+  visibility: visible;
+  opacity: 1;
+}
