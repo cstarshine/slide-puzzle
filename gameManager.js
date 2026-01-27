@@ -207,7 +207,7 @@ class GameManager {
     const diff = this.player.moveCount - this.currentMinMoves;
     const diffStr = diff > 0 ? ` (+${diff})` : " (Perfect!)";
 
-    const text = `Ice Slide Puzzle ${this.currentDate}\nMoves: ${this.player.moveCount} / ${this.currentMinMoves}${diffStr}\n\nCan you beat the ice? 🧊`;
+    const text = `Ice Slide Puzzle ${this.currentDate}\nMoves: ${this.player.moveCount} / ${this.currentMinMoves}${diffStr}\nhttps://cstarshine.github.io/slide-puzzle/`;
 
     if (navigator.clipboard && navigator.clipboard.writeText) {
       navigator.clipboard
